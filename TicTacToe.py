@@ -7,7 +7,8 @@ import numpy as np
 from _operator import length_hint
 import random 
 import copy 
-from ctypes import c_int64
+import xml.etree.cElementTree as etree
+
 class State: 
     
     def __init__(self,stateNumber,moves,rewards,board):
@@ -143,18 +144,13 @@ def resetBoard(board):#Simple function to reset the board to its original state
 # Game won by Os = 2 
 # Game Draw = 3
 def calculateState(i1,j1,board,statePlayerX,statePlayerO,stateNumber,player): 
-  
 
     #First we check the Xs 
     if (checkWinner(board,i1,j1) == True): 
         #Check the ones around it 
         print("The game has been won by player ",player,"!")
         #We want to update the reward of the current state of the computer 
-        #if player == 'X':
-          #  states[stateNumber].rewards[i][j] += 1 
-       # elif player == 'O': 
-       #     states[stateNumber].rewards[i][j] -= 1
-       #If that was the player who won 
+       
         if board[i1][j1] == 'X': 
             statePlayerX[stateNumber[0]].rewards[i1][j1] += 1 
             statePlayerO[stateNumber[0]].rewards[i1][j1] -= 1 
@@ -242,7 +238,7 @@ def chooseMove(validMoves, rewards):
         #Although we must first make sure that the move is a valid move
         while(okayMove): 
             [i,j] = [random.randint(0,2),random.randint(0,2)]
-           # print("R ", i, " " ,j)
+
             if (rewards[i][j] * validMoves[i][j]) != 0: 
                 #If the valid move matrix at the index i,j is not zero (in other words 0 * rewards[i][j] is not zero), then this move 
                 # is deemed valid 
@@ -272,7 +268,6 @@ def updateQ(states,stateNumber,Q_primed):
     i = states[stateNumber].i 
     j = states[stateNumber].j 
     
-    
     maxReward = states[stateNumber].rewards[i][j]
     states[stateNumber].Q_max = states[stateNumber].Q_max +  lamb * (maxReward + (discountFactor * Q_primed) - states[stateNumber].Q_max)
 def displayBoard(rowI,rowJ,player, board):
@@ -281,12 +276,6 @@ def displayBoard(rowI,rowJ,player, board):
     
     print("Computer ",player," makes the move on row ", rowI, " and column ",rowJ)
     
-  #  for i in range(numrows): 
-   #     for j in range(numcols): 
-    #        print(board[j][i],' ') 
-            
-   #     print("\n")
-        
     print('\n'.join([''.join(['{:4}'.format(item) for item in row]) 
       for row in board]))
     print("--------------------------------------------------")
@@ -300,7 +289,6 @@ def QlearnUpdate(states,stateNumber,board,player,list_playerX,list_playerO):
         #if our state does not exist, then we append the current state number with the current one 
         
         states[stateNumber[0]].state = stateNumber[0]
-     
         potentialMoves = allowableActions(board)
         
         newBoard = copy.deepcopy(board)
@@ -393,16 +381,8 @@ def calculateBoardWin(board,i,j,player):
         board = resetBoard(board)
     elif (isInList('*', board) == False): 
         board = resetBoard(board)
-        
- 
-    
-        
-    
-    
-    
-      
-gameLoop = True 
 
+gameLoop = True 
 
 
 stateNumber_X = [0] 
@@ -413,6 +393,10 @@ list_playerO = initializeList() #Initialie the list of the second player
 
 totalReward = 0 
 
+#Initialize the xml tree that will be used to store the XML file 
+
+
+#This is essentiallly the training classifier to create the lookup table necessary to complete the proper training for the AI player 
 while(gameLoop): 
     
     QlearnUpdate(list_playerX,stateNumber_X,board,'X',list_playerX,list_playerO) #Q learn update for the first AI player 
@@ -432,8 +416,6 @@ board =  [ ['*','*','*'],
                    ['*','*','*'],
                    ['*','*','*'],
                    ]
-
-
 
 
 while(humanLoop): 
