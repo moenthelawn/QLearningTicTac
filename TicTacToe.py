@@ -8,9 +8,10 @@ from _operator import length_hint
 import random 
 import copy 
 import msvcrt
-
+from math import fabs
 import xml.etree.cElementTree as etree
 import FileWriting
+from tensorflow.python.training.device_util import current
 #import XMLWriting
 class State: 
     
@@ -22,87 +23,11 @@ class State:
         self.Q_max = 0 
         self.i = -1 #Max row action 
         self.j = -1  #Max column action 
-        
+
 class StateNumber:
     def __init__(self): 
         self.stateNumberX = 0 
         self.stateNumberO = 0     
-def checkLength(board,characterType, i,j):
-    #Check row across 
-    l =3
-    counter_row_up = 0 
-    counter_row_down = 0 
-    
-    rows = len(board) - 1
-    cols = len(board[0]) - 1
-    
-    
-    counter_diagonal_top_right = 0 
-    counter_diagonal_top_left = 0 
-    counter_diagonal_bottom_right = 0
-    counter_diagonal_bottom_left = 0 
-    
-    counter_col_right = 0 
-    counter_col_left = 0 
-    
-    drawCounter = 0
-    
-    
-    for k in range(l): 
-        
-        if (i + k) <= rows: 
-            if board[i + k][j] == characterType: 
-                counter_row_up = counter_row_up + 1 
-                
-            if (j + k) <= cols: 
-                if board[i + k][j + k] == characterType: 
-                      #Diagonal down right 
-                    counter_diagonal_bottom_right = counter_diagonal_bottom_right + 1
-           
-                
-            if (j - k) >= 0:
-                if board[i + k][j - k] == characterType: 
-                    #Downwards 
-                    counter_diagonal_bottom_left = counter_diagonal_bottom_left + 1
-                    
-        if (i - k) >= 0: 
-            if board[i - k][j] == characterType: 
-                counter_row_down = counter_row_down + 1
-           
-                
-            if (j + k) <= cols: 
-                if board[i - k][j + k] == characterType:
-                    #diagonal top right
-                    counter_diagonal_top_right = counter_diagonal_top_right + 1
-       
-            if (j - k) >=0: 
-                if board[i - k][j - k] == characterType: 
-                    # diagonal up left 
-                    counter_diagonal_top_left = counter_diagonal_top_left + 1
-                    
-        if (j + k) <= cols: 
-            if board[i][j+k] ==characterType: 
-                counter_col_right=  counter_col_right+1
-                
-        if (j - k) >= 0: 
-            if board[i][j-k] == characterType: 
-                counter_col_left = counter_col_left + 1
-      
-      
-        # Upwards
-        
-       #Diagonal bottom left 
-        #if board[i + k][j - k] == characterType and (i + k) <= 5 and (j - k) >= 0: 
-          #  counter_diagonal_bottom_left = counter_diagonal_bottom_left + 1
-    if  counter_row_up == l or counter_row_down == l or counter_diagonal_top_right == l or counter_diagonal_top_left == l or counter_diagonal_bottom_right == l or  counter_diagonal_bottom_left == l or counter_col_right == l or counter_col_left == l:
-        #If there is a sequence such that the game has be won      
-        return 1 
-    elif drawCounter == 8: 
-        return 2 #This represents a draw
-    else: 
-        #The game has not yet been won 
-        return 0  
-
 def checkWinner(board, x , y ):
     
     #check if previous move caused a win on vertical line 
@@ -151,7 +76,7 @@ def calculateState(i1,j1,board,statePlayerX,statePlayerO,stateNumber,player):
     #First we check the Xs 
     if (checkWinner(board,i1,j1) == True): 
         #Check the ones around it 
-        print("The game has been won by player ",player,"!")
+        #print("The game has been won by player ",player,"!")
         #We want to update the reward of the current state of the computer 
        
         if board[i1][j1] == 'X': 
@@ -168,7 +93,6 @@ def calculateState(i1,j1,board,statePlayerX,statePlayerO,stateNumber,player):
         statePlayerX[stateNumber[0]].rewards[i1][j1] += 0.5 
         board = resetBoard(board)
         stateNumber[0] += 1 
- 
 
 board = [ ['*','*','*'],
          ['*','*','*'],
@@ -304,7 +228,7 @@ def QlearnUpdate(states,stateNumber,board,player,list_playerX,list_playerO):
         states[stateNumber[0]].j = j 
 
         board[i][j] = player #Update the board position of the new targeted move 
-        #displayBoard(i,j,player,board)
+       # displayBoard(i,j,player,board)
        
         
         Q_primed = getQPrimed(board,states)
@@ -326,7 +250,7 @@ def QlearnUpdate(states,stateNumber,board,player,list_playerX,list_playerO):
         
         
         board[i][j] = player #Update the board of the max position with the new player's character 
-        #displayBoard(i,j,player,board)
+       # displayBoard(i,j,player,board)
         
         
         Q_primed = getQPrimed(board,states)
@@ -382,7 +306,7 @@ def calculateBoardWin(board,i,j,player):
     #First we check the Xs 
     if (checkWinner(board,i,j) == True): 
         #Check the ones around it 
-        print("The game has been won by player ",player,"!")
+        #print("The game has been won by player ",player,"!")
         board = resetBoard(board)
     elif (isInList('*', board) == False): 
         board = resetBoard(board)
@@ -393,6 +317,32 @@ def kbfunc():
    else:
       ret = 0
    return ret
+def computeDeltadiff(previousReward, currentReward): 
+    return 100 * fabs((currentReward - previousReward)/previousReward)
+def gatherStatisticalData(statistics,currentPlayer): 
+    #Add the latest rewar to the statistics class 
+    I = currentPlayer.i 
+    J = currentPlayer.j 
+    statLength = len(statistics)
+    currentReward = currentPlayer.rewards[I][J]
+    
+    if statLength != 0: 
+        statistics.append(currentReward) #We append the current reward to the array which holds all of the statistical data
+        
+        previousReward = statistics[statLength - 1] #Now using the iteration counter for the entire game we grab the previous reward 
+        deltaDiff = computeDeltadiff(previousReward, currentReward)
+        print("Percentage Difference: ", deltaDiff,"%") 
+        return computeDeltadiff(previousReward, currentReward) #We compute the percent different between the two rewards in hopes of getting a threshold value that is less than some value for convergence 
+    elif statLength == 0: #Then our statlenghth is = 0 
+        statistics.append(currentReward) #Append the current reward at least 
+        
+        return 100 #Return an abrturary value such as 100 % 
+        
+
+    
+        
+    
+    
 gameLoop = True 
 
 
@@ -407,29 +357,37 @@ totalReward = 0
 #Initialize the xml tree that will be used to store the XML file 
 
 #This is essentiallly the training classifier to create the lookup table necessary to complete the proper training for the AI player 
+iterationCount = 0 
+iterationStats = []
+testBoard = [['*','X','*'],['O','*','*'],['*','*','*']]
 
+ConvergenceValue = 0.1 
 while(gameLoop): 
-
-    # press 'q' to exit
-    previousReward = list_playerX[stateNumber_X[0]].reward #Gather the previous reward value 
+    
+    
     QlearnUpdate(list_playerX,stateNumber_X,board,'X',list_playerX,list_playerO) #Q learn update for the first AI player 
+
+  
     #stateNumber += 1
     QlearnUpdate(list_playerO,stateNumber_O,board,'O',list_playerX,list_playerO) #Q learn update for for the second AI player 
     #print(stateNumber_O[0],stateNumber_X[0])
+    if board == testBoard: 
+        #here we need to take the state number of an arbiturary state and compute the reward delta 
+        currentXPlayerState = list_playerX[stateNumber_X[0]]
+        if gatherStatisticalData(iterationStats,currentXPlayerState) < ConvergenceValue: 
+            print("You have reached the reward function convergence value less than  ", ConvergenceValue) #Reaching the end convergence value 
+            
+            break 
+          
     
-   # deltaReward_Convergence(previousReward, list_playerX[stateNumber_X[0]].reward)
     
+    #gate(previousReward, list_playerX[stateNumber_X[0]].rewards))
+    iterationCount += 1 #This just counts the number of moves made by both player X and O 
 
-  #  #if stateNumber_X[0] == 19683 or stateNumber_O[0] == 19683:
-       # gameLoop == False 
-     #   break #Then we have reached all possible states in the game and thus break out of it 
-      
-A = allowableActions(testXWin)
-
+    
 #Probabilities are all set to 1 since every action 
 
 humanLoop = True 
-
 board =  [ ['*','*','*'],
                    ['*','*','*'],
                    ['*','*','*'],
@@ -442,7 +400,7 @@ while(humanLoop):
     [i,j] = input("Please Enter a row and a column in the form of row,column").split(',') 
     board[int(i)][int(j)] = 'X' #Human will be player X 
     
-    displayBoard(int(i),int(j),'X', board)
+    #displayBoard(int(i),int(j),'X', board)
     
     #We determine if there is a win yet 
     calculateBoardWin(board,int(i),int(j),'X') 
@@ -452,7 +410,7 @@ while(humanLoop):
     
     calculateBoardWin(board,i_computer,j_computer,'O')
     
-    displayBoard(i_computer,j_computer,'O', board)
+    #displayBoard(i_computer,j_computer,'O', board)
     
     
     
