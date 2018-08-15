@@ -7,8 +7,11 @@ import numpy as np
 from _operator import length_hint
 import random 
 import copy 
-import xml.etree.cElementTree as etree
+import msvcrt
 
+import xml.etree.cElementTree as etree
+import FileWriting
+#import XMLWriting
 class State: 
     
     def __init__(self,stateNumber,moves,rewards,board):
@@ -227,7 +230,7 @@ def getMaxAction(rewards,validMoves):
     
     
 def chooseMove(validMoves, rewards):
-    epsilon = 0.9
+    epsilon = 0
     randNumber = random.uniform(0, 1)
     
     okayMove  = True 
@@ -301,7 +304,7 @@ def QlearnUpdate(states,stateNumber,board,player,list_playerX,list_playerO):
         states[stateNumber[0]].j = j 
 
         board[i][j] = player #Update the board position of the new targeted move 
-        displayBoard(i,j,player,board)
+        #displayBoard(i,j,player,board)
        
         
         Q_primed = getQPrimed(board,states)
@@ -320,15 +323,17 @@ def QlearnUpdate(states,stateNumber,board,player,list_playerX,list_playerO):
         states[stateExists[0]].i = i 
         states[stateExists[0]].j = j
         
+        
+        
         board[i][j] = player #Update the board of the max position with the new player's character 
-        displayBoard(i,j,player,board)
+        #displayBoard(i,j,player,board)
         
         
         Q_primed = getQPrimed(board,states)
         updateQ(states, stateExists[0], Q_primed) #Now We need to update the function of the current state 
         
         calculateState(i, j, board, list_playerX,list_playerO, stateExists,player) #Check to see if O has won 
-       
+        stateNumber[0] = stateExists[0]
     
     
     #Choose the action from S using the policy derived from Q
@@ -381,7 +386,13 @@ def calculateBoardWin(board,i,j,player):
         board = resetBoard(board)
     elif (isInList('*', board) == False): 
         board = resetBoard(board)
-
+def kbfunc():
+   x = msvcrt.kbhit()
+   if x:
+      ret = ord(msvcrt.getch())
+   else:
+      ret = 0
+   return ret
 gameLoop = True 
 
 
@@ -395,19 +406,26 @@ totalReward = 0
 
 #Initialize the xml tree that will be used to store the XML file 
 
-
 #This is essentiallly the training classifier to create the lookup table necessary to complete the proper training for the AI player 
+
 while(gameLoop): 
-    
+
+    # press 'q' to exit
+    previousReward = list_playerX[stateNumber_X[0]].reward #Gather the previous reward value 
     QlearnUpdate(list_playerX,stateNumber_X,board,'X',list_playerX,list_playerO) #Q learn update for the first AI player 
-   # (states,stateNumber,board,player,list_playerX,list_playerO)
     #stateNumber += 1
     QlearnUpdate(list_playerO,stateNumber_O,board,'O',list_playerX,list_playerO) #Q learn update for for the second AI player 
-    #calculateState(list_playerO[state_playerO].i, list_playerX[state_playerO].j, board, list_playerX,list_playerO, state_playerO,"O",stateNumber) #Check to see if O has won 
-    print(stateNumber_O[0],stateNumber_X[0])
-    if stateNumber_X[0] == 19683:
-        break #Then we have reached all possible states in the game and thus break out of it 
+    #print(stateNumber_O[0],stateNumber_X[0])
+    
+   # deltaReward_Convergence(previousReward, list_playerX[stateNumber_X[0]].reward)
+    
+
+  #  #if stateNumber_X[0] == 19683 or stateNumber_O[0] == 19683:
+       # gameLoop == False 
+     #   break #Then we have reached all possible states in the game and thus break out of it 
+      
 A = allowableActions(testXWin)
+
 #Probabilities are all set to 1 since every action 
 
 humanLoop = True 
@@ -417,7 +435,7 @@ board =  [ ['*','*','*'],
                    ['*','*','*'],
                    ]
 
-
+FileWriting.createXMLFILE(list_playerX) #This will take the current states, query them and output them to the correct XML file format     
 while(humanLoop): 
     
     #While our human loop is in the iteration we can first read in the value of the human  player as they go first 
