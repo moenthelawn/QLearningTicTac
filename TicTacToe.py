@@ -8,10 +8,15 @@ from _operator import length_hint
 import random 
 import copy 
 import msvcrt
+import matplotlib.pyplot as plt 
+import numpy as np 
+
 from math import fabs
 import xml.etree.cElementTree as etree
 import FileWriting
 from tensorflow.python.training.device_util import current
+from numpy.core.function_base import linspace
+import statistics
 #import XMLWriting
 class State: 
     
@@ -329,18 +334,33 @@ def gatherStatisticalData(statistics,currentPlayer):
     if statLength != 0: 
         statistics.append(currentReward) #We append the current reward to the array which holds all of the statistical data
         
-        previousReward = statistics[statLength - 1] #Now using the iteration counter for the entire game we grab the previous reward 
-        deltaDiff = computeDeltadiff(previousReward, currentReward)
-        print("Percentage Difference: ", deltaDiff,"%") 
-        return computeDeltadiff(previousReward, currentReward) #We compute the percent different between the two rewards in hopes of getting a threshold value that is less than some value for convergence 
+        previousRewardValue = statistics[(statLength) - 1]#Now using the iteration counter for the entire game we grab the previous reward 
+        deltaDiff = computeDeltadiff(previousRewardValue, currentReward)
+        
+        if deltaDiff != 0: 
+            
+            print("Percentage Difference: ", deltaDiff,"%") 
+            print("The current reward is", currentReward) 
+            print("------------------")
+            return deltaDiff #We compute the percent different between the two rewards in hopes of getting a threshold value that is less than some value for convergence 
+        elif deltaDiff == 0: 
+            #Then we may want to run through a few iterations to see how it plays out 
+            print("Percentage Difference: ", deltaDiff,"%") 
+            print("The current reward is", currentReward) 
+            print("------------------")
+            return deltaDiff
     elif statLength == 0: #Then our statlenghth is = 0 
         statistics.append(currentReward) #Append the current reward at least 
         
         return 100 #Return an abrturary value such as 100 % 
-        
-
-    
-        
+def createGraphicalChart(statistics,chartType):
+    #These our all of our statistics for all of the  iteraions 
+    if chartType == 1: 
+        #Then our chart type is that of a scatter plot 
+        XaxisLength = len(statistics) 
+        x = np.linspace(0, XaxisLength, XaxisLength)
+        plt.scatter(x, statistics)
+        plt.show() 
     
     
 gameLoop = True 
@@ -364,10 +384,8 @@ testBoard = [['*','X','*'],['O','*','*'],['*','*','*']]
 ConvergenceValue = 0.1 
 while(gameLoop): 
     
-    
     QlearnUpdate(list_playerX,stateNumber_X,board,'X',list_playerX,list_playerO) #Q learn update for the first AI player 
 
-  
     #stateNumber += 1
     QlearnUpdate(list_playerO,stateNumber_O,board,'O',list_playerX,list_playerO) #Q learn update for for the second AI player 
     #print(stateNumber_O[0],stateNumber_X[0])
@@ -378,12 +396,11 @@ while(gameLoop):
             print("You have reached the reward function convergence value less than  ", ConvergenceValue) #Reaching the end convergence value 
             
             break 
-          
-    
-    
+      
     #gate(previousReward, list_playerX[stateNumber_X[0]].rewards))
     iterationCount += 1 #This just counts the number of moves made by both player X and O 
 
+createGraphicalChart(iterationStats, 1) #We want to create a graphical representation where 1 is a scatter chart 
     
 #Probabilities are all set to 1 since every action 
 
