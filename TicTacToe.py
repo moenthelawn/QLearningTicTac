@@ -382,6 +382,8 @@ iterationStats = []
 testBoard = [['*','X','*'],['O','*','*'],['*','*','*']]
 
 ConvergenceValue = 0.1 
+statsCounter = 0 #This is a temporary counter to track the stats of our game 
+streak = [] #Array to keep track of the highest counter strek we have before we have to reset it to zero 
 while(gameLoop): 
     
     QlearnUpdate(list_playerX,stateNumber_X,board,'X',list_playerX,list_playerO) #Q learn update for the first AI player 
@@ -392,10 +394,21 @@ while(gameLoop):
     if board == testBoard: 
         #here we need to take the state number of an arbiturary state and compute the reward delta 
         currentXPlayerState = list_playerX[stateNumber_X[0]]
-        if gatherStatisticalData(iterationStats,currentXPlayerState) < ConvergenceValue: 
+        stats = gatherStatisticalData(iterationStats,currentXPlayerState) 
+        
+        if stats < ConvergenceValue: 
             print("You have reached the reward function convergence value less than  ", ConvergenceValue) #Reaching the end convergence value 
+            streak.append(stats)
             
-            break 
+            if len(streak) == 4 : 
+                print("There has been enough convergences to produce a value that is at some  value you know what i am saying")
+                gameLoop = False #Justincase 
+                break; 
+        elif stats >= ConvergenceValue: 
+            print("The highest streak you had was", len(streak)) 
+            
+            streak = [] #Redeclare the streak variable 
+            
       
     #gate(previousReward, list_playerX[stateNumber_X[0]].rewards))
     iterationCount += 1 #This just counts the number of moves made by both player X and O 
@@ -428,6 +441,4 @@ while(humanLoop):
     calculateBoardWin(board,i_computer,j_computer,'O')
     
     #displayBoard(i_computer,j_computer,'O', board)
-    
-    
     
